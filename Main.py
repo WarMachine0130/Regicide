@@ -6,32 +6,39 @@ import random
 from Card import Card
 from Stack import Stack
 
+# notes
+#  - card size 96w x 144h
 
-size = width, height = 800, 600
-speed = [2, 2]
+# roadmap
+#  - deck/discard info
+#  - audio
+#  - animation
+#  - in game rules documentation
+#  - other game types
+
+
+
+# data declerations
+
+
+size = width, height = 1600, 900
 black = 0, 0, 0
+white = 255, 255, 255
 poolFeltGreen = 39, 119, 20
-
-screen = pygame.display.set_mode((size), pygame.RESIZABLE)
-pygame.display.set_caption('Test')
-
-ball = pygame.image.load("assets\Playing Cards\card-spades-1.png")
-ballrect = ball.get_rect()
-#ballrect.center = width//2, height//2
-
 moving = False
-suits = ['spades', 'clubs', 'diamonds', 'hearts']
+suits = ('spades', 'clubs', 'diamonds', 'hearts')
 
-# game setup
 
-# castle deck setup
+# game data setup
+
+    # castle deck setup
 castle = Stack()
 
 for i in range(3):
     stack = Stack()
 
     for x in suits:
-        stack.contents.append(Card(x, i + 11, f"assets\Playing Cards\card-{x}-{i + 11}.png"))
+        stack.contents.append(Card(x, i + 11))
 
     random.shuffle(stack.contents)
     castle.contents.extend(stack.contents)
@@ -40,37 +47,63 @@ for i in range(3):
 for i in castle.contents:
     print(f"{i.rank} of {i.suit}")
 
-# tavern deck setup
+    # tavern deck setup
 tavern = Stack()
 
 for i in range(10):
     for x in suits:
-        tavern.contents.append(Card(x, i + 1, f"assets\Playing Cards\card-{x}-{i + 1}.png"))
+        tavern.contents.append(Card(x, i + 1))
 random.shuffle(tavern.contents)
 
-print("")
+    # discard setup
+discard = Stack()
 
-for i in tavern.contents:
-    print(f"{i.rank} of {i.suit}")
+discard.contents.append(tavern.contents[0])
+
+# pygame setup
+
+screen = pygame.display.set_mode((size), pygame.RESIZABLE)
+pygame.display.set_caption('Regicide')
+
+cardBack = pygame.image.load("assets\Playing Cards\card-back2.png")
+cardBackRect = cardBack.get_rect()
+
+castleDeck = pygame.image.load(castle.contents[0].filePath)
+castleDeckRect = castleDeck.get_rect()
+castleDeckRect.x = width - 140
+castleDeckRect.y = 20
+
+discardTop = pygame.image.load(discard.contents[0].filePath)
+discardTopRect = discardTop.get_rect()
+
+# main loop
 
 while True:
-    pygame.draw.rect(screen, "white", ballrect)
+   # pygame.draw.rect(screen, "white", ballrect)
+
+
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT: sys.exit()
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if ballrect.collidepoint(event.pos):
-                moving = True
+            if castleDeckRect.collidepoint(event.pos): moving = True
+
         elif event.type == pygame.MOUSEBUTTONUP:
             moving = False
-        elif event.type == pygame.MOUSEMOTION and moving:
-            ballrect.move_ip(event.rel)
+            castleDeckRect.x = width - 140
+            castleDeckRect.y = 20
 
-            #ballrect = ballrect.move(speed)
-    #if ballrect.left < 0 or ballrect.right > width:
-        #speed[0] = -speed[0]
-    #if ballrect.top < 0 or ballrect.bottom > height:
-        #speed[1] = -speed[1]
+        elif event.type == pygame.MOUSEMOTION and moving: castleDeckRect.move_ip(event.rel)
 
     screen.fill(poolFeltGreen)
-    screen.blit(ball, ballrect)
+
+    screen.blit(cardBack, (width - 116, 20), cardBackRect)
+    screen.blit(castleDeck, castleDeckRect)
+    if len(tavern.contents) > 0: screen.blit(cardBack, (20, 20), cardBackRect)
+    if len(discard.contents) > 0: screen.blit(discardTop, (20, 184), discardTopRect)
+
+
+
+
     pygame.display.flip()
