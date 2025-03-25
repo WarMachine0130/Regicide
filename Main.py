@@ -1,6 +1,11 @@
 import sys, pygame
 pygame.init()
-import Card
+
+import random
+
+from Card import Card
+from Stack import Stack
+
 
 size = width, height = 800, 600
 speed = [2, 2]
@@ -15,6 +20,38 @@ ballrect = ball.get_rect()
 #ballrect.center = width//2, height//2
 
 moving = False
+suits = ['spades', 'clubs', 'diamonds', 'hearts']
+
+# game setup
+
+# castle deck setup
+castle = Stack()
+
+for i in range(3):
+    stack = Stack()
+
+    for x in suits:
+        stack.contents.append(Card(x, i + 11, f"assets\Playing Cards\card-{x}-{i + 11}.png"))
+
+    random.shuffle(stack.contents)
+    castle.contents.extend(stack.contents)
+
+
+for i in castle.contents:
+    print(f"{i.rank} of {i.suit}")
+
+# tavern deck setup
+tavern = Stack()
+
+for i in range(10):
+    for x in suits:
+        tavern.contents.append(Card(x, i + 1, f"assets\Playing Cards\card-{x}-{i + 1}.png"))
+random.shuffle(tavern.contents)
+
+print("")
+
+for i in tavern.contents:
+    print(f"{i.rank} of {i.suit}")
 
 while True:
     pygame.draw.rect(screen, "white", ballrect)

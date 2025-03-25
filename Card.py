@@ -1,4 +1,5 @@
 class Card:
-    filePath = ""
-    suit = 'x'
-    rank = 0
+    def __init__(self, suit, rank, filePath):
+        self.suit = suit
+        self.rank = rank
+        self.filePath = filePath
