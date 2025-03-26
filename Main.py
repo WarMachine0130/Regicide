@@ -31,6 +31,7 @@ moving = False
 suits = ('spades', 'clubs', 'diamonds', 'hearts')
 font = pygame.font.Font('freesansbold.ttf', 32)
 phase = 'attack'
+endTurn = False
 
 class Card:
     def __init__(self, suit, rank, scale):
@@ -40,6 +41,7 @@ class Card:
         self.rect = self.img.get_rect()
         self.power = rank
         self.health = 0
+        self.penalty = 0
 
 # game data setup
 
@@ -99,7 +101,7 @@ cardBack = pygame.transform.scale(cardBack, cardSize)
 tavernBackRect = cardBack.get_rect()
 castleBackRect = cardBack.get_rect()
 
-joker = pygame.image.load("assets\Playing Cards\card-back1.png")
+joker = pygame.image.load("assets\Playing Cards\card-joker-temp.png")
 joker = pygame.transform.scale(joker, [cardW / 2, cardH / 2])
 jokerRect1 = joker.get_rect()
 jokerRect2 = joker.get_rect()
@@ -107,10 +109,11 @@ jokerRect2 = joker.get_rect()
 # main loop
 
 while True:
+    endTurn = False
 
     screen.fill(poolFeltGreen)
 
-    power = font.render(f'Power: {castle[0].power}', True, poolFeltExtra)
+    power = font.render(f'Power: {castle[0].power - castle[0].penalty}', True, poolFeltExtra)
     powerRect = power.get_rect()
     powerRect.x = screenW - (spacer * 2) - int(cardW * 1.25) - powerRect.w
     powerRect.y = spacer
@@ -191,7 +194,8 @@ while True:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT: sys.exit()
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and confirmAttackRect.collidepoint(event.pos):
+        elif (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and confirmAttackRect.collidepoint(event.pos) and phase == 'attack'
+              and len(attack) > 0):
             spadesAbility = False
             diamondsAbility = False
             clubsAbility = False
@@ -210,7 +214,8 @@ while True:
             if clubsAbility == True:
                 atkPow = atkPow * 2
             if spadesAbility == True:
-                print("TODO")
+                castle[0].penalty = castle[0].penalty + atkPow
+                if castle[0].penalty > castle[0].power: castle[0].penalty = castle[0].power
             if diamondsAbility == True:
                 for i in range(atkPow):
                     if len(hand) < 8:
@@ -218,7 +223,14 @@ while True:
                     else:
                         break
             if heartsAbility == True:
-                print("TODO")
+                healedCards = []
+                for i in range(atkPow):
+                    try:
+                        choice = random.choice(discard)
+                        discard.remove(choice)
+                        tavern.append(choice)
+                    except :
+                        break
 
             for i in range(len(attack)):
                 discard.appendleft(attack.pop())
@@ -226,14 +238,15 @@ while True:
             castle[0].health -= atkPow
             if castle[0].health == 0: tavern.appendleft(castle.popleft())
             elif castle[0].health < 0: discard.appendleft(castle.popleft())
-            else:
+            elif castle[0].power - castle[0].penalty > 0:
                 phase = 'damage'
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and confirmAttackRect.collidepoint(event.pos):
-            if atkPow >= castle[0].power:
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and confirmDamageRect.collidepoint(event.pos):
+            if atkPow >= castle[0].power - castle[0].penalty:
                 for i in range(len(attack)):
                     discard.appendleft(attack.pop())
                 phase = 'attack'
+                endTurn = True
 
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and phase == 'damage':
             cardMoved = False
@@ -249,20 +262,17 @@ while True:
 
             cardMoved = True
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and phase == 'attack':
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and phase == 'attack' and endTurn == False:
             cardMoved = False
             for i in hand:
                 if i.rect.collidepoint(event.pos) and cardMoved == False and len(attack) < 6:
-                    if len(attack) == 0:
-                        attack.append(hand.pop(hand.index(i)))
-                    elif i.rank == 1:
-                        attack.append(hand.pop(hand.index(i)))
-                    else:
+                    if len(attack) == 0: attack.append(hand.pop(hand.index(i)))
+                    elif len(attack) == 1 and i.rank == 1: attack.append(hand.pop(hand.index(i)))
+                    elif 1 < i.rank < 6 and i.rank == attack[0].rank:
                         count = 0
-                        for j in attack:
-                            if i.rank == j.rank and count + j.rank < 11:
-                                attack.append(hand.pop(hand.index(i)))
-                                break
+                        for j in attack: count += j.power
+                        if count < 11: attack.append(hand.pop(hand.index(i)))
+
                     cardMoved = True
 
             for i in attack:
@@ -271,3 +281,4 @@ while True:
                     cardMoved = True
 
             cardMoved = True
+            endTurn = True
