@@ -1,6 +1,5 @@
-import sys, pygame
+import sys, pygame, random
 pygame.init()
-import random
 from collections import deque
 from Card import Card
 
@@ -61,9 +60,6 @@ for i in castle:
         i.power = 20
         i.health = 40
 
-castle[0].rect.x = screenW - spacer - cardW - (cardW / 4)
-castle[0].rect.y = spacer
-
     # tavern deck setup
 tavern = deque([])
 
@@ -108,18 +104,16 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT: sys.exit()
 
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if castle[0].rect.collidepoint(event.pos): moving = True
-
-        elif event.type == pygame.MOUSEBUTTONUP:
-            moving = False
-            castle[0].rect.x = screenW - spacer - cardW - (cardW / 4)
-            castle[0].rect.y = spacer
-
-        elif event.type == pygame.MOUSEMOTION and moving: castle[0].rect.move_ip(event.rel)
-
-        elif event.type == pygame.KEYDOWN:
-            castle[0].power -= 1
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            cardMoved = False
+            for i in attack:
+                if i.rect.collidepoint(event.pos) and cardMoved == False:
+                    hand.append(attack.pop(attack.index(i)))
+                    cardMoved = True
+            for i in hand:
+                if i.rect.collidepoint(event.pos) and cardMoved == False:
+                    attack.append(hand.pop(hand.index(i)))
+                    cardMoved = True
 
     power = font.render(f'Power: {castle[0].power}', True, poolFeltExtra)
     powerRect = power.get_rect()
@@ -128,10 +122,11 @@ while True:
 
     screen.fill(poolFeltGreen)
 
-    screen.blit(cardBack, (screenW - cardW - spacer, spacer), cardBackRect)
-    screen.blit(castle[0].img, castle[0].rect)
-    if len(tavern) > 0: screen.blit(cardBack, (spacer, cardH + (spacer * 2)), cardBackRect)
-    if len(discard) > 0: screen.blit(discard[0].img, (spacer, spacer), discard[0].rect)
+    if len(castle) > 1: screen.blit(cardBack, (screenW - cardW - spacer, spacer), cardBackRect)
+    screen.blit(castle[0].img, (screenW - spacer - cardW - (cardW / 4), spacer), castle[0].rect)
+
+    if len(tavern) > 0: screen.blit(cardBack, (spacer, spacer), cardBackRect)
+    if len(discard) > 0: screen.blit(discard[0].img, ((spacer * 2) + cardW, spacer), discard[0].rect)
 
     screen.blit(power, (screenW - (spacer * 2) - int(cardW * 1.25) - powerRect.w, spacer), powerRect)
     screen.blit(health, (screenW - (spacer * 3) - int(cardW * 1.25) - healthRect.w - powerRect.w, spacer),
@@ -141,6 +136,13 @@ while True:
     screen.blit(joker, (screenW - 20 - (cardW / 2), screenH - (int(spacer * 1.5) + int(cardH * 1.5))), jokerRect2)
 
     for i in hand:
-        screen.blit(i.img, (spacer + ((cardW + (spacer / 2)) * hand.index(i)), screenH - 20 - cardH), i.rect)
+        i.rect.x = spacer + ((cardW + (spacer / 2)) * hand.index(i))
+        i.rect.y = screenH - 20 - cardH
+        screen.blit(i.img, i.rect)
+
+    for i in attack:
+        i.rect.x = spacer + ((cardW + (spacer / 2)) * attack.index(i))
+        i.rect.y = spacer * 2 + cardH
+        screen.blit(i.img, i.rect)
 
     pygame.display.flip()
