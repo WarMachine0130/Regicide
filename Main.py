@@ -30,6 +30,7 @@ poolFeltExtra = 31, 43, 71
 moving = False
 suits = ('spades', 'clubs', 'diamonds', 'hearts')
 font = pygame.font.Font('freesansbold.ttf', 32)
+phase = 'attack'
 
 class Card:
     def __init__(self, suit, rank, scale):
@@ -81,7 +82,7 @@ discard = deque([])
 hand = []
 
 for i in range(8):
-    hand.append(tavern.pop())
+    hand.append(tavern.popleft())
 
 discard.append(tavern[0])
 
@@ -95,7 +96,8 @@ pygame.display.set_caption('Regicide')
 
 cardBack = pygame.image.load("assets\Playing Cards\card-back2.png")
 cardBack = pygame.transform.scale(cardBack, cardSize)
-cardBackRect = cardBack.get_rect()
+tavernBackRect = cardBack.get_rect()
+castleBackRect = cardBack.get_rect()
 
 joker = pygame.image.load("assets\Playing Cards\card-back1.png")
 joker = pygame.transform.scale(joker, [cardW / 2, cardH / 2])
@@ -110,32 +112,62 @@ while True:
 
     power = font.render(f'Power: {castle[0].power}', True, poolFeltExtra)
     powerRect = power.get_rect()
-    screen.blit(power, (screenW - (spacer * 2) - int(cardW * 1.25) - powerRect.w, spacer), powerRect)
+    powerRect.x = screenW - (spacer * 2) - int(cardW * 1.25) - powerRect.w
+    powerRect.y = spacer
+    screen.blit(power, powerRect)
 
     health = font.render(f'Health: {castle[0].health}', True, poolFeltComplement)
     healthRect = health.get_rect()
-    screen.blit(health, (screenW - (spacer * 3) - int(cardW * 1.25) - healthRect.w - powerRect.w, spacer),
-                healthRect)
+    healthRect.x = screenW - (spacer * 3) - int(cardW * 1.25) - healthRect.w - powerRect.w
+    healthRect.y = spacer
+    screen.blit(health, healthRect)
 
     atkPow = 0
     for i in attack: atkPow += i.power
     attackPow = font.render(f'Attack: {atkPow}', True, poolFeltComplement)
     attackPowRect = attackPow.get_rect()
-    screen.blit(attackPow, (screenW - (spacer * 2) - (cardW / 2) - attackPowRect.w, int(spacer * 1.5) +
-                            int(cardH * 1.25) - int(attackPowRect.h / 2)), attackPowRect)
+    attackPowRect.x = screenW - (spacer * 2) - (cardW / 2) - attackPowRect.w
+    attackPowRect.y = int(spacer * 1.5) + int(cardH * 1.25) - int(attackPowRect.h / 2)
+    screen.blit(attackPow, attackPowRect)
 
     confirmAttack = font.render("Confirm Attack!", True, poolFeltComplement, black)
     confirmAttackRect = confirmAttack.get_rect()
     confirmAttackRect.x = screenW - (spacer * 2) - (cardW / 2) - confirmAttackRect.w
     confirmAttackRect.y = screenH - (int(spacer * 1.5) + int(cardH * 1.5)) + (cardW / 4)
-    screen.blit(confirmAttack, confirmAttackRect)
+
+    confirmDamage = font.render("Confirm Damage!", True, white, black)
+    confirmDamageRect = confirmDamage.get_rect()
+    confirmDamageRect.x = screenW - (spacer * 2) - (cardW / 2) - confirmDamageRect.w
+    confirmDamageRect.y = screenH - (int(spacer * 1.5) + int(cardH * 1.5)) + (cardW / 4)
+
+    if phase == 'attack':
+        screen.blit(confirmAttack, confirmAttackRect)
+        #screen.blit(confirmDamage, (10000, 10000), confirmDamageRect)
+
+    elif phase == 'damage':
+        screen.blit(confirmDamage, confirmDamageRect)
+        #screen.blit(confirmAttack, (10000, 10000), confirmAttackRect)
 
 
-    if len(castle) > 1: screen.blit(cardBack, (screenW - cardW - spacer, spacer), cardBackRect)
-    screen.blit(castle[0].img, (screenW - spacer - cardW - (cardW / 4), spacer), castle[0].rect)
 
-    if len(tavern) > 0: screen.blit(cardBack, (spacer, spacer), cardBackRect)
-    if len(discard) > 0: screen.blit(discard[0].img, ((spacer * 2) + cardW, spacer), discard[0].rect)
+    if len(castle) > 1:
+        tavernBackRect.x = screenW - cardW - spacer
+        tavernBackRect.y = spacer
+        screen.blit(cardBack, tavernBackRect)
+
+        castle[0].rect.x = screenW - spacer - cardW - (cardW / 4)
+        castle[0].rect.y = spacer
+        screen.blit(castle[0].img, castle[0].rect)
+
+    if len(tavern) > 0:
+        castleBackRect.x = spacer
+        castleBackRect.y = spacer
+        screen.blit(cardBack, castleBackRect)
+    if len(discard) > 0:
+        for i in discard:
+            i.rect.x = (spacer * 2) + cardW
+            i.rect.y = spacer
+        screen.blit(discard[0].img, discard[0].rect)
 
     jokerRect1.x = screenW - spacer - (cardW / 2)
     jokerRect1.y = int(spacer * 1.5) + cardH
@@ -147,7 +179,7 @@ while True:
 
     for i in hand:
         i.rect.x = spacer + ((cardW + (spacer / 2)) * hand.index(i))
-        i.rect.y = screenH - 20 - cardH
+        i.rect.y = screenH - spacer - cardH
         screen.blit(i.img, i.rect)
 
     for i in attack:
@@ -188,22 +220,54 @@ while True:
             if heartsAbility == True:
                 print("TODO")
 
-            castle[0].health -= atkPow
-            if castle[0].health == 0: tavern.appendleft(castle.popleft())
-            elif castle[0].health < 0: discard.appendleft(castle.popleft())
-
             for i in range(len(attack)):
                 discard.appendleft(attack.pop())
 
-            if len(discard) > 0: print("d")
+            castle[0].health -= atkPow
+            if castle[0].health == 0: tavern.appendleft(castle.popleft())
+            elif castle[0].health < 0: discard.appendleft(castle.popleft())
+            else:
+                phase = 'damage'
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and confirmAttackRect.collidepoint(event.pos):
+            if atkPow >= castle[0].power:
+                for i in range(len(attack)):
+                    discard.appendleft(attack.pop())
+                phase = 'attack'
+
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and phase == 'damage':
             cardMoved = False
+            for i in hand:
+                if i.rect.collidepoint(event.pos) and cardMoved == False and len(attack) < 6:
+                    attack.append(hand.pop(hand.index(i)))
+                    cardMoved = True
+
             for i in attack:
                 if i.rect.collidepoint(event.pos) and cardMoved == False:
                     hand.append(attack.pop(attack.index(i)))
                     cardMoved = True
+
+            cardMoved = True
+
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and phase == 'attack':
+            cardMoved = False
             for i in hand:
-                if i.rect.collidepoint(event.pos) and len(attack) < 6 and cardMoved == False:
-                    attack.append(hand.pop(hand.index(i)))
+                if i.rect.collidepoint(event.pos) and cardMoved == False and len(attack) < 6:
+                    if len(attack) == 0:
+                        attack.append(hand.pop(hand.index(i)))
+                    elif i.rank == 1:
+                        attack.append(hand.pop(hand.index(i)))
+                    else:
+                        count = 0
+                        for j in attack:
+                            if i.rank == j.rank and count + j.rank < 11:
+                                attack.append(hand.pop(hand.index(i)))
+                                break
                     cardMoved = True
+
+            for i in attack:
+                if i.rect.collidepoint(event.pos) and cardMoved == False:
+                    hand.append(attack.pop(attack.index(i)))
+                    cardMoved = True
+
+            cardMoved = True
