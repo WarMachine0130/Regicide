@@ -1,4 +1,4 @@
-import sys, pygame, random
+import sys, os, pygame, random
 pygame.init()
 from collections import deque
 
@@ -122,7 +122,7 @@ while True:
     healthRect.y = spacer
     screen.blit(health, healthRect)
 
-    immunity = font.render(f'{castle[0].suit} abilities disabled', True, white, black)
+    immunity = font.render(f'{castle[0].suit} abilities disabled', True, black)
     immunityRect = immunity.get_rect()
     immunityRect.x = screenW - int(cardW * 1.25) - spacer * 2 - immunityRect.w
     immunityRect.y = healthRect.y + spacer + immunityRect.h
@@ -131,7 +131,7 @@ while True:
     tavernCount = font.render(f'Deck: {len(tavern)}', True, white)
     tavernCountRect = tavernCount.get_rect()
     tavernCountRect.x = 3 * spacer + 2 * cardW
-    tavernCountRect.y = spacer + cardH / 2 - cardH / 4 - tavernCountRect.h / 2
+    tavernCountRect.y = spacer + cardH / 2 - tavernCountRect.h / 2
     screen.blit(tavernCount, tavernCountRect)
 
     discardCount = font.render(f'Discard: {len(discard)}', True, black)
@@ -139,6 +139,12 @@ while True:
     discardCountRect.x = 3 * spacer + 2 * cardW
     discardCountRect.y = spacer + cardH / 2 + cardH / 4 - discardCountRect.h / 2
     screen.blit(discardCount, discardCountRect)
+
+    rulesButton = font.render("How to play", True, white, black)
+    rulesButtonRect = rulesButton.get_rect()
+    rulesButtonRect.x = 3 * spacer + 2 * cardW
+    rulesButtonRect.y = spacer + cardH / 2 - cardH / 4 - rulesButtonRect.h / 2
+    screen.blit(rulesButton, rulesButtonRect)
 
     atkPow = 0
     for i in attack: atkPow += i.power
@@ -216,7 +222,10 @@ while True:
                         hand.append(tavern.popleft())
                     jokers.remove(i)
 
-            if confirmAttackRect.collidepoint(event.pos) and phase == 'attack' and len(attack) > 0:
+            if rulesButtonRect.collidepoint(event.pos):
+                    os.startfile(os.path.normpath("assets/RegicideRulesA4.pdf"))
+
+            elif confirmAttackRect.collidepoint(event.pos) and phase == 'attack' and len(attack) > 0:
                 spadesAbility = False
                 diamondsAbility = False
                 clubsAbility = False
